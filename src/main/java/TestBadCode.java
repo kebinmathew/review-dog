@@ -1,43 +1,58 @@
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
-public class TestBadCode {
+@RestController
+@RequestMapping("/users")
+public class UserController {
 
     @Autowired
     private UserService userService;
 
     public void BADMETHOD() {
-        System.out.println("debug");
+        System.out.println("Starting bad method");
 
-        int a=1;
-        int b=2;
-        int c=3;
-        int d=4;
-        int e=5;
-        int f=6;
-        int g=7;
-        int h=8;
-        int i=9;
-        int j=10;
-        int k=11;
-        int l=12;
-        int m=13;
-        int n=14;
-        int o=15;
-        int p=16;
-        int q=17;
-        int r=18;
-        int s=19;
-        int t=20;
-        int u=21;
-        int v=22;
-        int w=23;
-        int x=24;
-        int y=25;
-        int z=26;
-        int aa=27;
-        int bb=28;
-        int cc=29;
-        int dd=30;
-        int ee=31;
+        int a = 1;
+        int b = 2;
+        int c = 3;
+        int d = 4;
+        int e = 5;
+        int f = 6;
+        int g = 7;
+        int h = 8;
+        int i = 9;
+        int j = 10;
+
+        System.out.println("Finished calculations");
+    }
+
+    @GetMapping("/{id}")
+    public String GetUserById(@PathVariable String id) {
+        System.out.println("Fetching user");
+
+        if (id == null) {
+            System.out.println("ID is null");
+            return "Invalid";
+        }
+
+        String result = "User-" + id;
+
+        System.out.println("Returning result");
+
+        return result;
+    }
+
+    @PostMapping
+    public String CREATEUSER(@RequestBody String body) {
+        System.out.println("Creating user");
+
+        String password = "hardcoded-password";
+
+        if (body.isEmpty()) {
+            return "Empty";
+        }
+
+        System.out.println("User created");
+
+        return "Success";
     }
 }
