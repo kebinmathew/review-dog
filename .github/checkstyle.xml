@@ -1,0 +1,31 @@
+<!DOCTYPE module PUBLIC
+ "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+ "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+  <module name="TreeWalker">
+
+    <!-- Method must be under 30 lines -->
+    <module name="MethodLength">
+      <property name="max" value="30"/>
+    </module>
+
+    <!-- Avoid field injection -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="@Autowired"/>
+      <property name="message" value="Avoid field injection. Use constructor injection."/>
+    </module>
+
+    <!-- No System.out -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="System.out.println"/>
+      <property name="message" value="Use logger instead of System.out"/>
+    </module>
+
+    <!-- Naming rules -->
+    <module name="MethodName"/>
+    <module name="ClassName"/>
+    <module name="LocalVariableName"/>
+
+  </module>
+</module>
