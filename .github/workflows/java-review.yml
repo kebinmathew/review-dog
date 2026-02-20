@@ -18,29 +18,28 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Install reviewdog
-        uses: reviewdog/action-setup@v1
+      - uses: reviewdog/action-setup@v1
 
-      # CHECKSTYLE
       - name: Run Checkstyle
         run: |
           wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
-          
-          # Find all Java files
-          FILES=$(git ls-files '*.java')
-          
-          # Run checkstyle
+
           java -jar checkstyle-10.12.4-all.jar \
             -c .github/checkstyle.xml \
-            -f xml $FILES > checkstyle-result.xml || true
-          
-          # If file empty, create dummy XML so reviewdog doesn't crash
+            -f xml \
+            $(git ls-files '*.java') \
+            > checkstyle-result.xml || true
+
           if [ ! -s checkstyle-result.xml ]; then
             echo '<?xml version="1.0"?><checkstyle version="10.0"></checkstyle>' > checkstyle-result.xml
           fi
 
-      - name: Reviewdog Checkstyle
+      - name: Reviewdog
         run: |
-          cat checkstyle-result.xml | reviewdog -f=checkstyle -reporter=github-pr-review -level=warning
+          reviewdog -f=checkstyle \
+            -name="java-review" \
+            -reporter=github-pr-review \
+            -level=warning \
+            < checkstyle-result.xml
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
