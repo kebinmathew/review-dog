@@ -25,7 +25,7 @@ jobs:
       - name: Run Checkstyle
         run: |
           wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
-          java -jar checkstyle-10.12.4-all.jar -c .github/checkstyle.xml -f xml src/main/java > checkstyle-result.xml || true
+          java -jar checkstyle-10.12.4-all.jar -c .github/checkstyle.xml -f xml . > checkstyle-result.xml || true
 
       - name: Reviewdog Checkstyle
         run: |
