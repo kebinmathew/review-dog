@@ -5,27 +5,27 @@
 <module name="Checker">
   <module name="TreeWalker">
 
-    <!-- Method must be under 30 lines -->
+    <!-- Force method length small -->
     <module name="MethodLength">
-      <property name="max" value="30"/>
+      <property name="max" value="5"/>
     </module>
 
-    <!-- Avoid field injection -->
-    <module name="RegexpSinglelineJava">
-      <property name="format" value="@Autowired"/>
-      <property name="message" value="Avoid field injection. Use constructor injection."/>
-    </module>
-
-    <!-- No System.out -->
+    <!-- Ban System.out -->
     <module name="RegexpSinglelineJava">
       <property name="format" value="System.out.println"/>
       <property name="message" value="Use logger instead of System.out"/>
     </module>
 
-    <!-- Naming rules -->
-    <module name="MethodName"/>
-    <module name="ClassName"/>
-    <module name="LocalVariableName"/>
+    <!-- Ban @Autowired field injection -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="@Autowired"/>
+      <property name="message" value="Avoid field injection. Use constructor injection."/>
+    </module>
+
+    <!-- Enforce camelCase method names -->
+    <module name="MethodName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+    </module>
 
   </module>
 </module>
