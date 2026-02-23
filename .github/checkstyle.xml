@@ -21,6 +21,12 @@
       <property name="format" value="@Autowired"/>
       <property name="message" value="Avoid field injection. Use constructor injection."/>
     </module>
+   <!-- Constants must be CAPITAL_WITH_UNDERSCORES -->
+<module name="ConstantName">
+  <property name="format" value="^[A-Z][A-Z0-9_]*$"/>
+  <message key="name.invalidPattern"
+           value="Constant ''{0}'' must be in CAPITAL letters (e.g., MAX_SIZE)"/>
+</module>
 
     <!-- Enforce camelCase method names -->
     <module name="MethodName">
