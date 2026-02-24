@@ -5,6 +5,18 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/users")
 public class UserController {
 
+    // ❌ BAD constant (not uppercase)
+    public static final String apiUrl = "http://test.com";
+
+    // ❌ BAD constant (camelCase)
+    public static final int maxUsers = 100;
+
+    // ❌ BAD constant (mixed case)
+    public static final String UserType = "ADMIN";
+
+    // ✅ GOOD constant (for comparison)
+    public static final int MAX_SIZE = 10;
+
     @Autowired
     private UserService userService;
 
