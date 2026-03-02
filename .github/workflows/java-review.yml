@@ -1,1 +1,45 @@
+name: Java Review
 
+on:
+  pull_request:
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: reviewdog/action-setup@v1
+
+      - name: Run Checkstyle
+        run: |
+          wget https://github.com/checkstyle/checkstyle/releases/download/checkstyle-10.12.4/checkstyle-10.12.4-all.jar
+
+          java -jar checkstyle-10.12.4-all.jar \
+            -c .github/checkstyle.xml \
+            -f xml \
+            $(git ls-files '*.java') \
+            > checkstyle-result.xml || true
+
+          if [ ! -s checkstyle-result.xml ]; then
+            echo '<?xml version="1.0"?><checkstyle version="10.0"></checkstyle>' > checkstyle-result.xml
+          fi
+
+      - name: Reviewdog
+        run: |
+          reviewdog -f=checkstyle \
+            -name="java-review" \
+            -reporter=github-pr-review \
+            -level=warning \
+            < checkstyle-result.xml
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
