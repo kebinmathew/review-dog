@@ -9,10 +9,10 @@ public class UserController {
     public static final String APIURL = "http://test.com";
 
     // ❌ BAD constant (camelCase)
-    public static final int maxUsers = 100;
+    public static final int MAXUSERS = 100;
 
     // ❌ BAD constant (mixed case)
-    public static final String UserType = "ADMIN";
+    public static final String USERTYPES = "ADMIN";
 
     // ✅ GOOD constant (for comparison)
     public static final int MAX_SIZE = 10;
