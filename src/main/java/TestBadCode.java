@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     // ❌ BAD constant (not uppercase)
-    public static final String apiUrl = "http://test.com";
+    public static final String APIURL = "http://test.com";
 
     // ❌ BAD constant (camelCase)
     public static final int maxUsers = 100;
