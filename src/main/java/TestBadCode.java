@@ -16,6 +16,14 @@ public class UserController {
 
     // ✅ GOOD constant (for comparison)
     public static final int MAX_SIZE = 10;
+       // ❌ BAD constant (camelCase)
+    public static final int MAXUSERS = 100;
+
+    // ❌ BAD constant (mixed case)
+    public static final String USERTYPES = "ADMIN";
+
+    // ✅ GOOD constant (for comparison)
+    public static final int MAX_SIZE = 10;
 
     @Autowired
     private UserService userService;
