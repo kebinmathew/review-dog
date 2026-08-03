@@ -34,6 +34,11 @@ jobs:
             echo '<?xml version="1.0"?><checkstyle version="10.0"></checkstyle>' > checkstyle-result.xml
           fi
 
+      - name: Run Review Rules
+        run: python3 .github/review_rules.py
+        env:
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+
       - name: Reviewdog
         run: |
           reviewdog -f=checkstyle \
