@@ -1,0 +1,141 @@
+<!DOCTYPE module PUBLIC
+ "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+ "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<module name="Checker">
+  <module name="TreeWalker">
+
+    <!-- Force method length small -->
+    <module name="MethodLength">
+      <property name="max" value="5"/>
+    </module>
+
+    <!-- Ban System.out -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="System.out.println"/>
+      <property name="message" value="Use logger instead of System.out"/>
+    </module>
+
+    <!-- Ban @Autowired field injection -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="@Autowired"/>
+      <property name="message" value="Avoid field injection. Use constructor injection."/>
+    </module>
+    <!-- Rule 2.2: Class names must be UpperCamelCase -->
+    <module name="TypeName">
+      <property name="format" value="^[A-Z][a-zA-Z0-9]*$"/>
+      <message key="name.invalidPattern" value="Rule 2.2: Class names must be nouns in UpperCamelCase (e.g., UserDTO, HtmlDTO)."/>
+    </module>
+
+    <!-- Rule 2.3: Methods must use lowerCamelCase -->
+    <module name="MethodName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+      <message key="name.invalidPattern" value="Rule 2.3: Method names must use lowerCamelCase (e.g., getHttpMessage)."/>
+    </module>
+
+    <!-- Rule 2.3: Member variables must use lowerCamelCase -->
+    <module name="MemberName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+      <message key="name.invalidPattern" value="Rule 2.3: Member variables must use lowerCamelCase (e.g., inputUserId)."/>
+    </module>
+
+    <!-- Rule 2.3: Local variables must use lowerCamelCase -->
+    <module name="LocalVariableName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+      <message key="name.invalidPattern" value="Rule 2.3: Local variables must use lowerCamelCase (e.g., inputUserId)."/>
+    </module>
+
+    <!-- Rule 2.3: Parameter names must use lowerCamelCase -->
+    <module name="ParameterName">
+      <property name="format" value="^[a-z][a-zA-Z0-9]*$"/>
+      <message key="name.invalidPattern" value="Rule 2.3: Parameters must use lowerCamelCase (e.g., inputUserId)."/>
+    </module>
+
+    <!-- Rule 2.4: Constants are UPPER_SNAKE_CASE and meaningful -->
+    <module name="ConstantName">
+      <property name="format" value="^(?![A-Z]{1,3}$)[A-Z][A-Z0-9]*(_[A-Z0-9]+)*$"/>
+      <message key="name.invalidPattern" value="Rule 2.4: Constants must be in UPPER_SNAKE_CASE and meaningful (avoid short unclear names like MAX)."/>
+    </module>
+
+    <!-- Rule 2.5: Package names are lowercase -->
+    <module name="PackageName">
+      <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+      <message key="name.invalidPattern" value="Rule 2.5: Package names must be lowercase."/>
+    </module>
+
+    <!-- Rule 2.6: Array brackets belong to the type -->
+    <module name="ArrayTypeStyle">
+      <property name="javaStyle" value="true"/>
+      <message key="array.type.style" value="Rule 2.6: Array brackets belong to the type (e.g., String[] args)."/>
+    </module>
+
+    <!-- Rule 4.2: Never swallow exceptions -->
+    <module name="EmptyCatchBlock">
+      <property name="exceptionVariableName" value="expected|ignore"/>
+      <message key="catch.block.empty" value="Rule 4.2: Never swallow exceptions. Log or rethrow the exception."/>
+    </module>
+
+    <!-- Rule 4.3: @Override is required -->
+    <module name="MissingOverride">
+      <message key="annotation.missing.override" value="Rule 4.3: @Override is required when overriding methods."/>
+    </module>
+
+    <!-- Rule 4.5: Override equals and hashCode together -->
+    <module name="EqualsHashCode">
+      <message key="equals.noHashCode" value="Rule 4.5: Always override equals and hashCode together."/>
+    </module>
+
+    <!-- Rule 4.8: No System.exit -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="System\.exit\s*\("/>
+      <property name="message" value="Rule 4.8: System.exit is not allowed."/>
+    </module>
+
+    <!-- Rule 4.8: No unrestricted process execution -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="Runtime\.getRuntime\(\)\.exec|ProcessBuilder"/>
+      <property name="message" value="Rule 4.8: Unrestricted process execution is not allowed."/>
+    </module>
+
+    <!-- Rule 5.4: Threads must come from a managed pool -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="new\s+Thread\s*\("/>
+      <property name="message" value="Rule 5.4: Do not create raw threads. Use a managed pool (taskExecutor.execute() or @Async)."/>
+    </module>
+
+    <!-- Rule 5.5: Do not use unbounded Executors factories -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="Executors\.(newCachedThreadPool|newFixedThreadPool|newSingleThreadExecutor)\s*\("/>
+      <property name="message" value="Rule 5.5: Do not use unbounded Executors factories. Use ThreadPoolExecutor with bounded queues or Spring ThreadPoolTaskExecutor."/>
+    </module>
+
+    <!-- Rule 5.6: Never share SimpleDateFormat (not thread-safe) -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="new\s+SimpleDateFormat\s*\("/>
+      <property name="message" value="Rule 5.6: Prefer java.time (DateTimeFormatter). SimpleDateFormat is not thread-safe and must never be shared as a static field."/>
+    </module>
+
+    <!-- Rule 5.6: Static SimpleDateFormat is not thread-safe -->
+    <module name="RegexpSinglelineJava">
+      <property name="format" value="static\s+.*SimpleDateFormat"/>
+      <property name="message" value="Rule 5.6: Do not use static SimpleDateFormat — it is not thread-safe. Use DateTimeFormatter instead."/>
+    </module>
+
+    <!-- Rule 6.1: switch fallthrough — every case must end with break/return/throw -->
+    <module name="FallThrough">
+      <message key="fall.through" value="Rule 6.1: Switch case falls through to the next case. Add break, return, or throw."/>
+      <message key="fall.through.last" value="Rule 6.1: Last switch case falls through. Add break, return, or throw."/>
+    </module>
+
+    <!-- Rule 6.1: switch must have a default case -->
+    <module name="MissingSwitchDefault">
+      <message key="missing.switch.default" value="Rule 6.1: switch must include a default case."/>
+    </module>
+
+    <!-- Rule 6.2: Braces required on if/else/for/while/do -->
+    <module name="NeedBraces">
+      <message key="needBraces" value="Rule 6.2: Braces are required for if/else/for/while/do blocks."/>
+    </module>
+
+  </module>
+</module>
