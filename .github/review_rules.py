@@ -116,6 +116,16 @@ RULE_DB_DROP_PK_INDEX = "Rule-DB-4.4-Drop-PK-Index"
 RULE_DB_NO_SELF_JOIN = "Rule-DB-4.11-No-Self-Join"
 RULE_DB_NULL_INEQUALITY = "Rule-DB-5.1-Null-Inequality"
 RULE_DB_TERMINATE_SLASH = "Rule-DB-6.3-Terminate-Slash"
+RULE_DB_TABLE_NAME = "Rule-DB-1.1-Table-Name"
+RULE_DB_VIEW_NAME = "Rule-DB-1.2-View-Name"
+RULE_DB_FK_ALIGN = "Rule-DB-1.3-FK-Align"
+RULE_DB_PROC_PREFIX = "Rule-DB-1.4-Proc-Prefix"
+RULE_DB_FUNC_PREFIX = "Rule-DB-1.5-Func-Prefix"
+RULE_DB_PKG_PREFIX = "Rule-DB-1.6-Pkg-Prefix"
+RULE_DB_TRG_PREFIX = "Rule-DB-1.7-Trg-Prefix"
+RULE_DB_SEQ_PREFIX = "Rule-DB-1.8-Seq-Prefix"
+RULE_DB_PARAM_PREFIX = "Rule-DB-1.9-Param-Prefix"
+RULE_DB_VAR_PREFIX = "Rule-DB-1.10-Var-Prefix"
 
 _PR_ADDED_LINES_CACHE = None
 
@@ -4748,6 +4758,253 @@ def check_db_terminate_slash():
             ))
     return errors
 
+def check_db_table_name():
+    errors = []
+    create_tbl_pat = re.compile(r'\bCREATE\s+TABLE\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = create_tbl_pat.search(line)
+            if m:
+                table_name = m.group(1)
+                is_invalid = False
+                if table_name.lower().startswith('t_') and len(table_name) <= 8:
+                    is_invalid = True
+                elif len(table_name) <= 6:
+                    is_invalid = True
+                
+                if is_invalid:
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.1 [WARN]: Table name '{table_name}' is too short or ambiguous. Table names must clearly describe their contents.",
+                        RULE_DB_TABLE_NAME
+                    ))
+    return errors
+
+def check_db_view_name():
+    errors = []
+    create_view_pat = re.compile(r'\bCREATE\s+(?:OR\s+REPLACE\s+)?VIEW\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = create_view_pat.search(line)
+            if m:
+                view_name = m.group(1)
+                if len(view_name) <= 6 or re.match(r'^v\d*$', view_name, re.IGNORECASE):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.2 [WARN]: View name '{view_name}' is too short or ambiguous. View names must clearly describe their contents.",
+                        RULE_DB_VIEW_NAME
+                    ))
+    return errors
+
+def check_db_fk_align():
+    errors = []
+    fk_pat = re.compile(
+        r'FOREIGN\s+KEY\s*\(\s*([a-zA-Z0-9_]+)\s*\)\s*REFERENCES\s+[a-zA-Z0-9_]+\s*\(\s*([a-zA-Z0-9_]+)\s*\)',
+        re.IGNORECASE
+    )
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = fk_pat.search(line)
+            if m:
+                fk_col, ref_col = m.group(1), m.group(2)
+                if fk_col.lower() != ref_col.lower():
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.3 [WARN]: Foreign key column '{fk_col}' name mismatch with referenced column '{ref_col}'. They should be named identically.",
+                        RULE_DB_FK_ALIGN
+                    ))
+    return errors
+
+def check_db_proc_prefix():
+    errors = []
+    proc_pat = re.compile(r'\bCREATE\s+(?:OR\s+REPLACE\s+)?PROCEDURE\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = proc_pat.search(line)
+            if m:
+                proc_name = m.group(1).lower()
+                prefixes = ('get_', 'update_', 'upd_', 'delete_', 'del_', 'insert_')
+                if not proc_name.startswith(prefixes):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.4 [WARN]: Procedure '{m.group(1)}' name must be prefixed by an action (GET, UPDATE/UPD, DELETE/DEL, INSERT).",
+                        RULE_DB_PROC_PREFIX
+                    ))
+    return errors
+
+def check_db_func_prefix():
+    errors = []
+    func_pat = re.compile(r'\bCREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = func_pat.search(line)
+            if m:
+                func_name = m.group(1).lower()
+                if not func_name.startswith('fn_'):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.5 [WARN]: Function '{m.group(1)}' must be prefixed by 'FN_' (e.g. FN_IS_... or FN_GET_...).",
+                        RULE_DB_FUNC_PREFIX
+                    ))
+    return errors
+
+def check_db_pkg_prefix():
+    errors = []
+    pkg_pat = re.compile(r'\bCREATE\s+(?:OR\s+REPLACE\s+)?PACKAGE\s+(?:BODY\s+)?([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = pkg_pat.search(line)
+            if m:
+                pkg_name = m.group(1).lower()
+                if not pkg_name.startswith('pkg_'):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.6 [WARN]: Package '{m.group(1)}' must be prefixed by 'PKG_'.",
+                        RULE_DB_PKG_PREFIX
+                    ))
+    return errors
+
+def check_db_trg_prefix():
+    errors = []
+    trg_pat = re.compile(r'\bCREATE\s+(?:OR\s+REPLACE\s+)?TRIGGER\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = trg_pat.search(line)
+            if m:
+                trg_name = m.group(1).lower()
+                if not trg_name.startswith('trg_'):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.7 [WARN]: Trigger '{m.group(1)}' must be prefixed by 'TRG_'.",
+                        RULE_DB_TRG_PREFIX
+                    ))
+    return errors
+
+def check_db_seq_prefix():
+    errors = []
+    seq_pat = re.compile(r'\bCREATE\s+SEQUENCE\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = seq_pat.search(line)
+            if m:
+                seq_name = m.group(1).lower()
+                if not seq_name.startswith('seq_'):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.8 [WARN]: Sequence '{m.group(1)}' must be prefixed by 'SEQ_'.",
+                        RULE_DB_SEQ_PREFIX
+                    ))
+    return errors
+
+def check_db_param_prefix():
+    errors = []
+    param_block_pat = re.compile(r'\b(?:PROCEDURE|FUNCTION)\s+[a-zA-Z0-9_]+\s*\(([^)]+)\)', re.IGNORECASE | re.DOTALL)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for m in param_block_pat.finditer(content_clean):
+            param_block = m.group(1)
+            line_no = 1
+            first_line_of_block = param_block.strip().splitlines()[0] if param_block.strip() else ""
+            for idx, line in enumerate(content_clean.splitlines(), 1):
+                if first_line_of_block in line:
+                    line_no = idx
+                    break
+            
+            params = param_block.split(',')
+            for param in params:
+                param = param.strip()
+                if not param:
+                    continue
+                param_name = param.split()[0]
+                if not param_name.lower().startswith(('av_', 'aw_')):
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-1.9 [WARN]: Parameter '{param_name}' must be prefixed by 'av_' (read-only) or 'aw_' (insert/update).",
+                        RULE_DB_PARAM_PREFIX
+                    ))
+    return errors
+
+def check_db_var_prefix():
+    errors = []
+    var_pat = re.compile(
+        r'^\s*([a-zA-Z0-9_]+)\s+(NUMBER|INTEGER|FLOAT|DOUBLE|INT|VARCHAR2|VARCHAR|CHAR|DATE|TIMESTAMP|BOOLEAN)\b(?:\s*\(.*?\))?\s*(?::=\s*.*?)?;',
+        re.IGNORECASE | re.MULTILINE
+    )
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for m in var_pat.finditer(content_clean):
+            var_name = m.group(1)
+            var_type = m.group(2).upper()
+            
+            if var_name.upper() in ('RETURN', 'SELECT', 'BEGIN', 'EXCEPTION', 'WHEN', 'THEN', 'ELSE', 'END', 'CREATE', 'ALTER'):
+                continue
+            
+            line_no = 1
+            matched_text = m.group(0).strip()
+            first_line = matched_text.splitlines()[0] if matched_text else ""
+            for idx, line in enumerate(content_clean.splitlines(), 1):
+                if first_line in line:
+                    line_no = idx
+                    break
+                    
+            is_valid = True
+            expected_prefix = ""
+            if var_type in ('NUMBER', 'INTEGER', 'FLOAT', 'DOUBLE', 'INT'):
+                is_valid = var_name.lower().startswith('li_')
+                expected_prefix = 'li_'
+            elif var_type in ('VARCHAR2', 'VARCHAR', 'CHAR'):
+                is_valid = var_name.lower().startswith('ls_')
+                expected_prefix = 'ls_'
+            elif var_type in ('DATE', 'TIMESTAMP', 'BOOLEAN'):
+                is_valid = var_name.lower().startswith('lo_')
+                expected_prefix = 'lo_'
+                
+            if not is_valid:
+                errors.append(warning(
+                    filepath, line_no,
+                    f"Rule DB-1.10 [WARN]: Variable '{var_name}' of type {var_type} must be prefixed by '{expected_prefix}'.",
+                    RULE_DB_VAR_PREFIX
+                ))
+    return errors
+
 def normalize_path(p):
     p = p.replace('\\', '/')
     if p.startswith('./'):
@@ -5052,6 +5309,16 @@ def main():
     new_errors.extend(check_db_no_self_join())
     new_errors.extend(check_db_null_inequality())
     new_errors.extend(check_db_terminate_slash())
+    new_errors.extend(check_db_table_name())
+    new_errors.extend(check_db_view_name())
+    new_errors.extend(check_db_fk_align())
+    new_errors.extend(check_db_proc_prefix())
+    new_errors.extend(check_db_func_prefix())
+    new_errors.extend(check_db_pkg_prefix())
+    new_errors.extend(check_db_trg_prefix())
+    new_errors.extend(check_db_seq_prefix())
+    new_errors.extend(check_db_param_prefix())
+    new_errors.extend(check_db_var_prefix())
     
     try:
         new_errors.extend(check_compilation())
