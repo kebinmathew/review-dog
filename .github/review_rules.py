@@ -126,6 +126,17 @@ RULE_DB_TRG_PREFIX = "Rule-DB-1.7-Trg-Prefix"
 RULE_DB_SEQ_PREFIX = "Rule-DB-1.8-Seq-Prefix"
 RULE_DB_PARAM_PREFIX = "Rule-DB-1.9-Param-Prefix"
 RULE_DB_VAR_PREFIX = "Rule-DB-1.10-Var-Prefix"
+RULE_DB_PURPOSE_COMMENT = "Rule-DB-2.2-Purpose-Comment"
+RULE_DB_CASE_NUMBER = "Rule-DB-2.3-Case-Number"
+RULE_DB_KEYWORDS_UPPER = "Rule-DB-4.1-Keywords-Upper"
+RULE_DB_IDENTIFIERS_LOWER = "Rule-DB-4.2-Identifiers-Lower"
+RULE_DB_ALIAS_CONSISTENT = "Rule-DB-4.3-Alias-Consistent"
+RULE_DB_NO_SCHEMA_PREFIX = "Rule-DB-4.5-No-Schema-Prefix"
+RULE_DB_BOOLEAN_INT = "Rule-DB-4.6-Boolean-Int"
+RULE_DB_COMPLEX_LOGIC_COMMENT = "Rule-DB-4.7-Complex-Logic-Comment"
+RULE_DB_MAGIC_VALUE_COMMENT = "Rule-DB-4.8-Magic-Value-Comment"
+RULE_DB_USE_TYPE_DECLARATION = "Rule-DB-4.9-Use-Type-Declaration"
+RULE_DB_WHERE_ORDER = "Rule-DB-4.10-Where-Order"
 
 _PR_ADDED_LINES_CACHE = None
 
@@ -4710,9 +4721,9 @@ def check_db_no_self_join():
         for stmt in statements:
             if self_join_from_pat.search(stmt) or self_join_join_pat.search(stmt):
                 line_no = 1
-                stmt_stripped = stmt.strip()
-                if stmt_stripped:
-                    first_line = stmt_stripped.splitlines()[0]
+                stmt_lines = [line.strip() for line in stmt.splitlines() if line.strip() and line.strip() != '/']
+                if stmt_lines:
+                    first_line = stmt_lines[0]
                     for idx, line in enumerate(content_clean.splitlines(), 1):
                         if first_line in line:
                             line_no = idx
@@ -5013,6 +5024,284 @@ def check_db_var_prefix():
                     f"Rule DB-1.10 [WARN]: Variable '{var_name}' of type {var_type} must be prefixed by '{expected_prefix}'.",
                     RULE_DB_VAR_PREFIX
                 ))
+    return errors
+
+def check_db_purpose_comment():
+    errors = []
+    header_pat = re.compile(
+        r'\bCREATE\s+(?:OR\s+REPLACE\s+)?(?:PROCEDURE|FUNCTION|PACKAGE|TRIGGER)\s+[a-zA-Z0-9_]+\b.*?\b(?:IS|AS)\b',
+        re.IGNORECASE | re.DOTALL
+    )
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        lines = content.splitlines()
+        for m in header_pat.finditer(content_clean):
+            header_end_idx = m.end()
+            line_no = len(content_clean[:header_end_idx].splitlines())
+            
+            has_purpose_comment = False
+            for idx in range(line_no, min(line_no + 3, len(lines))):
+                next_line = lines[idx].strip()
+                if next_line.startswith('--') or next_line.startswith('/*'):
+                    has_purpose_comment = True
+                    break
+            
+            if not has_purpose_comment:
+                errors.append(warning(
+                    filepath, line_no + 1,
+                    "Rule DB-2.2 [WARN]: Purpose comment required right below the procedure/function/package/trigger header.",
+                    RULE_DB_PURPOSE_COMMENT
+                ))
+    return errors
+
+def check_db_case_number():
+    errors = []
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        for line_no, line in enumerate(content.splitlines(), 1):
+            if re.search(r'--\s*(?:changed|modified|edited)\b', line, re.IGNORECASE):
+                if not re.search(r'--\s*START\s+CASE\s+FIBI-\d+', content, re.IGNORECASE):
+                    errors.append(warning(
+                        filepath, line_no,
+                        "Rule DB-2.3 [WARN]: Modified code blocks must be marked with a start/end case comment block referencing the case number (e.g. -- START CASE FIBI-XXXX).",
+                        RULE_DB_CASE_NUMBER
+                    ))
+        
+        starts = list(re.finditer(r'--\s*START\s+CASE\s+(FIBI-\d+)', content, re.IGNORECASE))
+        ends = list(re.finditer(r'--\s*END\s+CASE\s+(FIBI-\d+)', content, re.IGNORECASE))
+        if len(starts) != len(ends):
+            errors.append(warning(
+                filepath, 1,
+                f"Rule DB-2.3 [WARN]: Mismatched case comment blocks. Found {len(starts)} START blocks and {len(ends)} END blocks.",
+                RULE_DB_CASE_NUMBER
+            ))
+    return errors
+
+def check_db_keywords_upper():
+    errors = []
+    keywords = ('select', 'from', 'where', 'begin', 'end', 'insert', 'update', 'delete', 'into', 'values', 'declare', 'create', 'alter', 'drop', 'table', 'procedure', 'function', 'package', 'trigger', 'if', 'then', 'else', 'elsif', 'return')
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        content_no_strings = re.sub(r"'[^']*'", "''", content_clean)
+        for line_no, line in enumerate(content_no_strings.splitlines(), 1):
+            for kw in keywords:
+                m = re.search(r'\b(' + kw + r')\b', line)
+                if m:
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-4.1 [WARN]: SQL keyword '{m.group(1)}' must be written in UPPER case.",
+                        RULE_DB_KEYWORDS_UPPER
+                    ))
+    return errors
+
+def check_db_identifiers_lower():
+    errors = []
+    allowed_upper = {
+        'SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'NOT', 'IN', 'IS', 'NULL', 'INSERT', 'INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE', 'CREATE', 'TABLE', 'VIEW', 'PROCEDURE', 'FUNCTION', 'PACKAGE', 'TRIGGER', 'SEQUENCE', 'ALTER', 'DROP', 'ADD', 'CONSTRAINT', 'FOREIGN', 'KEY', 'REFERENCES', 'INDEX', 'PRIMARY', 'BEGIN', 'END', 'AS', 'IF', 'THEN', 'ELSE', 'ELSIF', 'LOOP', 'FOR', 'WHILE', 'DECLARE', 'NUMBER', 'VARCHAR2', 'VARCHAR', 'CHAR', 'DATE', 'TIMESTAMP', 'BOOLEAN', 'RETURN', 'RETURNS', 'EXCEPTION', 'WHEN', 'OTHERS', 'OUT', 'INOUT', 'USE', 'SQL_SAFE_UPDATES', 'NOW', 'COUNT', 'DELIMITER', 'CASE', 'DEFAULT', 'CLOB', 'BLOB', 'BODY', 'REPLACE'
+    }
+    upper_word_pat = re.compile(r'\b([a-zA-Z0-9_]*[A-Z][a-zA-Z0-9_]*)\b')
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        content_no_strings = re.sub(r"'[^']*'", "''", content_clean)
+        for line_no, line in enumerate(content_no_strings.splitlines(), 1):
+            for m in upper_word_pat.finditer(line):
+                word = m.group(1)
+                if word.isdigit():
+                    continue
+                if word.upper() not in allowed_upper:
+                    errors.append(warning(
+                        filepath, line_no,
+                        f"Rule DB-4.2 [WARN]: Identifier '{word}' must be written in lower case.",
+                        RULE_DB_IDENTIFIERS_LOWER
+                    ))
+    return errors
+
+def check_db_alias_consistent():
+    errors = []
+    from_comma_pat1 = re.compile(r'\bFROM\s+([a-zA-Z0-9_]+)\s*,\s*([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\b', re.IGNORECASE)
+    from_comma_pat2 = re.compile(r'\bFROM\s+([a-zA-Z0-9_]+)\s+([a-zA-Z0-9_]+)\s*,\s*([a-zA-Z0-9_]+)(?!\s+[a-zA-Z0-9_])\b', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if from_comma_pat1.search(line) or from_comma_pat2.search(line):
+                errors.append(warning(
+                    filepath, line_no,
+                    "Rule DB-4.3 [WARN]: Inconsistent table alias usage. Use table aliases consistently across all tables in a script.",
+                    RULE_DB_ALIAS_CONSISTENT
+                ))
+    return errors
+
+def check_db_no_schema_prefix():
+    errors = []
+    prefix_pat = re.compile(r'\b(?:FROM|JOIN|UPDATE|INSERT\s+INTO)\s+([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)\b', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            m = prefix_pat.search(line)
+            if m:
+                errors.append(warning(
+                    filepath, line_no,
+                    f"Rule DB-4.5 [WARN]: Schema prefix '{m.group(1)}' found. Objects within scripts must not be prefixed with the schema name to ensure portability.",
+                    RULE_DB_NO_SCHEMA_PREFIX
+                ))
+    return errors
+
+def check_db_boolean_int():
+    errors = []
+    ret_bool_pat = re.compile(r'\bRETURN\s+(TRUE|FALSE)\b', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if ret_bool_pat.search(line):
+                errors.append(warning(
+                    filepath, line_no,
+                    "Rule DB-4.6 [WARN]: Boolean-returning functions must use 1 for success and 0 for failure (do not return TRUE/FALSE directly).",
+                    RULE_DB_BOOLEAN_INT
+                ))
+    return errors
+
+def check_db_complex_logic_comment():
+    errors = []
+    complex_pat = re.compile(r'\b(?:MOD|POWER|DECODE|ABS|TRUNC|ROUND)\b|[-+*/]{2,}', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        lines = content.splitlines()
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if complex_pat.search(line):
+                has_comment = False
+                start_check = max(0, line_no - 3)
+                for idx in range(start_check, line_no):
+                    if idx < len(lines) and ('--' in lines[idx] or '/*' in lines[idx]):
+                        has_comment = True
+                        break
+                if not has_comment:
+                    errors.append(warning(
+                        filepath, line_no,
+                        "Rule DB-4.7 [WARN]: Complex or non-obvious operations must have an explanatory comment.",
+                        RULE_DB_COMPLEX_LOGIC_COMMENT
+                    ))
+    return errors
+
+def check_db_magic_value_comment():
+    errors = []
+    literal_comp_pat = re.compile(r'\bWHERE\b.*?(?:=\s*\d+|=\s*\'[^\']+\'|<>\s*\d+|<>\s*\'[^\']+\')', re.IGNORECASE | re.DOTALL)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        statements = content_clean.split(';')
+        for stmt in statements:
+            if literal_comp_pat.search(stmt):
+                stmt_lines = [line.strip() for line in stmt.splitlines() if line.strip() and line.strip() != '/']
+                if not stmt_lines:
+                    continue
+                first_line = stmt_lines[0]
+                line_no = 1
+                for idx, line in enumerate(content_clean.splitlines(), 1):
+                    if first_line in line:
+                        line_no = idx
+                        break
+                
+                original_lines = content.splitlines()
+                has_comment = False
+                for idx in range(line_no - 1, min(line_no + len(stmt_lines), len(original_lines))):
+                    if '--' in original_lines[idx] or '/*' in original_lines[idx]:
+                        has_comment = True
+                        break
+                if not has_comment:
+                    errors.append(warning(
+                        filepath, line_no,
+                        "Rule DB-4.8 [WARN]: Magic / constant values used in WHERE clauses must be documented with an explanatory comment.",
+                        RULE_DB_MAGIC_VALUE_COMMENT
+                    ))
+    return errors
+
+def check_db_use_type_declaration():
+    errors = []
+    var_pat = re.compile(
+        r'^\s*([a-zA-Z0-9_]+)\s+(NUMBER|INTEGER|FLOAT|DOUBLE|INT|VARCHAR2|VARCHAR|CHAR|DATE|TIMESTAMP)\b(?:\s*\(.*?\))?\s*(?::=\s*.*?)?;',
+        re.IGNORECASE | re.MULTILINE
+    )
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for m in var_pat.finditer(content_clean):
+            var_name = m.group(1)
+            var_type = m.group(2).upper()
+            
+            if var_name.upper() in ('RETURN', 'SELECT', 'BEGIN', 'EXCEPTION', 'WHEN', 'THEN', 'ELSE', 'END', 'CREATE', 'ALTER'):
+                continue
+            
+            line_no = 1
+            matched_text = m.group(0).strip()
+            first_line = matched_text.splitlines()[0] if matched_text else ""
+            for idx, line in enumerate(content_clean.splitlines(), 1):
+                if first_line in line:
+                    line_no = idx
+                    break
+            
+            errors.append(warning(
+                filepath, line_no,
+                f"Rule DB-4.9 [WARN]: Variable '{var_name}' of type {var_type} should be declared using '%TYPE' derived from a database column.",
+                RULE_DB_USE_TYPE_DECLARATION
+            ))
+    return errors
+
+def check_db_where_order():
+    errors = []
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        statements = content_clean.split(';')
+        for stmt in statements:
+            if 'WHERE' in stmt.upper():
+                where_idx = stmt.upper().find('WHERE')
+                where_clause = stmt[where_idx:]
+                filter_match = re.search(r'\b[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\s*(?:=|<|>|!=|<>)\s*[\'":\w]+', where_clause)
+                join_match = re.search(r'\b([a-zA-Z0-9_]+)\.[a-zA-Z0-9_]+\s*=\s*(?!\1\b)[a-zA-Z0-9_]+\.[a-zA-Z0-9_]+\b', where_clause)
+                
+                if filter_match and join_match:
+                    if filter_match.start() < join_match.start():
+                        stmt_lines = stmt.strip().splitlines()
+                        first_line = stmt_lines[0] if stmt_lines else ""
+                        line_no = 1
+                        for idx, line in enumerate(content_clean.splitlines(), 1):
+                            if first_line in line:
+                                line_no = idx
+                                break
+                        errors.append(warning(
+                            filepath, line_no,
+                            "Rule DB-4.10 [WARN]: Join conditions in WHERE clauses should be ordered before single-table filter conditions.",
+                            RULE_DB_WHERE_ORDER
+                        ))
     return errors
 
 def normalize_path(p):
@@ -5329,6 +5618,17 @@ def main():
     new_errors.extend(check_db_seq_prefix())
     new_errors.extend(check_db_param_prefix())
     new_errors.extend(check_db_var_prefix())
+    new_errors.extend(check_db_purpose_comment())
+    new_errors.extend(check_db_case_number())
+    new_errors.extend(check_db_keywords_upper())
+    new_errors.extend(check_db_identifiers_lower())
+    new_errors.extend(check_db_alias_consistent())
+    new_errors.extend(check_db_no_schema_prefix())
+    new_errors.extend(check_db_boolean_int())
+    new_errors.extend(check_db_complex_logic_comment())
+    new_errors.extend(check_db_magic_value_comment())
+    new_errors.extend(check_db_use_type_declaration())
+    new_errors.extend(check_db_where_order())
     
     try:
         new_errors.extend(check_compilation())

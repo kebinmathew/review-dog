@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.0">
+  <file name="src/main/resources/db/migration/bad_standards.sql">
+    <error line="30" column="1" severity="warning" message="Rule DB-1.5 [WARN]: Function &apos;test_func_bool&apos; must be prefixed by &apos;FN_&apos; (e.g. FN_IS_... or FN_GET_...)." source="Rule-DB-1.5-Func-Prefix" />
+    <error line="31" column="1" severity="warning" message="Rule DB-2.2 [WARN]: Purpose comment required right below the procedure/function/package/trigger header." source="Rule-DB-2.2-Purpose-Comment" />
+    <error line="1" column="1" severity="warning" message="Rule DB-2.3 [WARN]: Mismatched case comment blocks. Found 1 START blocks and 0 END blocks." source="Rule-DB-2.3-Case-Number" />
+    <error line="14" column="1" severity="warning" message="Rule DB-4.1 [WARN]: SQL keyword &apos;select&apos; must be written in UPPER case." source="Rule-DB-4.1-Keywords-Upper" />
+    <error line="14" column="1" severity="warning" message="Rule DB-4.1 [WARN]: SQL keyword &apos;from&apos; must be written in UPPER case." source="Rule-DB-4.1-Keywords-Upper" />
+    <error line="18" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;EMP_ID&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="18" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;EMP_NAME&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="32" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;TRUE&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="36" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;MOD&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="22" column="1" severity="warning" message="Rule DB-4.3 [WARN]: Inconsistent table alias usage. Use table aliases consistently across all tables in a script." source="Rule-DB-4.3-Alias-Consistent" />
+    <error line="26" column="1" severity="warning" message="Rule DB-4.5 [WARN]: Schema prefix &apos;polus_schema&apos; found. Objects within scripts must not be prefixed with the schema name to ensure portability." source="Rule-DB-4.5-No-Schema-Prefix" />
+    <error line="32" column="1" severity="warning" message="Rule DB-4.6 [WARN]: Boolean-returning functions must use 1 for success and 0 for failure (do not return TRUE/FALSE directly)." source="Rule-DB-4.6-Boolean-Int" />
+    <error line="36" column="1" severity="warning" message="Rule DB-4.7 [WARN]: Complex or non-obvious operations must have an explanatory comment." source="Rule-DB-4.7-Complex-Logic-Comment" />
+    <error line="39" column="1" severity="warning" message="Rule DB-4.8 [WARN]: Magic / constant values used in WHERE clauses must be documented with an explanatory comment." source="Rule-DB-4.8-Magic-Value-Comment" />
+    <error line="51" column="1" severity="warning" message="Rule DB-4.8 [WARN]: Magic / constant values used in WHERE clauses must be documented with an explanatory comment." source="Rule-DB-4.8-Magic-Value-Comment" />
+    <error line="44" column="1" severity="warning" message="Rule DB-4.9 [WARN]: Variable &apos;li_emp_id&apos; of type NUMBER should be declared using &apos;%TYPE&apos; derived from a database column." source="Rule-DB-4.9-Use-Type-Declaration" />
+    <error line="11" column="1" severity="warning" message="Rule DB-4.10 [WARN]: Join conditions in WHERE clauses should be ordered before single-table filter conditions." source="Rule-DB-4.10-Where-Order" />
+  </file>
+</checkstyle>
