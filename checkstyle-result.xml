@@ -1,3 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <checkstyle version="8.0">
+  <file name="src/main/java/TestBadCode.java">
+    <error line="8" column="1" severity="warning" message="Rule 1.3 [WARN]: Behavior changed without a test update or PR testing note. Prefer adding/updating tests, or document manual verification / deferral." source="Rule-1.3-Changed-Behavior-Tests" />
+  </file>
 </checkstyle>
