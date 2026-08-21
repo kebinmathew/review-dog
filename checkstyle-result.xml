@@ -1,20 +1,3 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <checkstyle version="8.0">
-  <file name="src/main/resources/db/migration/bad_standards.sql">
-    <error line="59" column="1" severity="error" message="Rule DB-2.1 [BLOCK]: Object header must start with CREATE OR REPLACE (every function, procedure, or package)." source="Rule-DB-2.1-Create-Or-Replace" />
-    <error line="10" column="1" severity="error" message="Rule DB-4.11 [BLOCK]: No duplicate or self joins. Do not join the same table twice without a deliberate reason." source="Rule-DB-4.11-No-Self-Join" />
-    <error line="29" column="1" severity="warning" message="Rule DB-1.1 [WARN]: Table name &apos;t_emp1&apos; is too short or ambiguous. Table names must clearly describe their contents." source="Rule-DB-1.1-Table-Name" />
-    <error line="36" column="1" severity="warning" message="Rule DB-1.2 [WARN]: View name &apos;v1&apos; is too short or ambiguous. View names must clearly describe their contents." source="Rule-DB-1.2-View-Name" />
-    <error line="40" column="1" severity="warning" message="Rule DB-1.3 [WARN]: Foreign key column &apos;dept_ref&apos; name mismatch with referenced column &apos;dept_id&apos;. They should be named identically." source="Rule-DB-1.3-FK-Align" />
-    <error line="44" column="1" severity="warning" message="Rule DB-1.4 [WARN]: Procedure &apos;emp_details_proc&apos; name must be prefixed by an action (GET, UPDATE/UPD, DELETE/DEL, INSERT)." source="Rule-DB-1.4-Proc-Prefix" />
-    <error line="77" column="1" severity="warning" message="Rule DB-1.4 [WARN]: Procedure &apos;test_params&apos; name must be prefixed by an action (GET, UPDATE/UPD, DELETE/DEL, INSERT)." source="Rule-DB-1.4-Proc-Prefix" />
-    <error line="51" column="1" severity="warning" message="Rule DB-1.5 [WARN]: Function &apos;is_active_emp&apos; must be prefixed by &apos;FN_&apos; (e.g. FN_IS_... or FN_GET_...)." source="Rule-DB-1.5-Func-Prefix" />
-    <error line="58" column="1" severity="warning" message="Rule DB-1.6 [WARN]: Package &apos;emp_utils&apos; must be prefixed by &apos;PKG_&apos;." source="Rule-DB-1.6-Pkg-Prefix" />
-    <error line="64" column="1" severity="warning" message="Rule DB-1.7 [WARN]: Trigger &apos;emp_audit_trg&apos; must be prefixed by &apos;TRG_&apos;." source="Rule-DB-1.7-Trg-Prefix" />
-    <error line="73" column="1" severity="warning" message="Rule DB-1.8 [WARN]: Sequence &apos;emp_id_seq&apos; must be prefixed by &apos;SEQ_&apos;." source="Rule-DB-1.8-Seq-Prefix" />
-    <error line="77" column="1" severity="warning" message="Rule DB-1.9 [WARN]: Parameter &apos;p_emp_id&apos; must be prefixed by &apos;av_&apos; (read-only) or &apos;aw_&apos; (insert/update)." source="Rule-DB-1.9-Param-Prefix" />
-    <error line="79" column="1" severity="warning" message="Rule DB-1.10 [WARN]: Variable &apos;emp_id&apos; of type NUMBER must be prefixed by &apos;li_&apos;." source="Rule-DB-1.10-Var-Prefix" />
-    <error line="80" column="1" severity="warning" message="Rule DB-1.10 [WARN]: Variable &apos;emp_name&apos; of type VARCHAR2 must be prefixed by &apos;ls_&apos;." source="Rule-DB-1.10-Var-Prefix" />
-    <error line="81" column="1" severity="warning" message="Rule DB-1.10 [WARN]: Variable &apos;bad_date&apos; of type DATE must be prefixed by &apos;lo_&apos;." source="Rule-DB-1.10-Var-Prefix" />
-  </file>
 </checkstyle>

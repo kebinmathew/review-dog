@@ -4950,7 +4950,17 @@ def check_db_param_prefix():
                 param = param.strip()
                 if not param:
                     continue
-                param_name = param.split()[0]
+                parts = param.split()
+                if not parts:
+                    continue
+                
+                # Check for direction keyword (IN, OUT, INOUT) at the start
+                if parts[0].upper() in ('IN', 'OUT', 'INOUT') and len(parts) > 1:
+                    param_name = parts[1]
+                else:
+                    param_name = parts[0]
+                
+                param_name = param_name.strip('`')
                 if not param_name.lower().startswith(('av_', 'aw_')):
                     errors.append(warning(
                         filepath, line_no,
