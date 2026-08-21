@@ -137,6 +137,18 @@ RULE_DB_COMPLEX_LOGIC_COMMENT = "Rule-DB-4.7-Complex-Logic-Comment"
 RULE_DB_MAGIC_VALUE_COMMENT = "Rule-DB-4.8-Magic-Value-Comment"
 RULE_DB_USE_TYPE_DECLARATION = "Rule-DB-4.9-Use-Type-Declaration"
 RULE_DB_WHERE_ORDER = "Rule-DB-4.10-Where-Order"
+RULE_DB_SET_WHERE_COLUMN = "Rule-DB-5.2-Set-Where-Column"
+RULE_DB_NO_FUNCTION_WHERE = "Rule-DB-5.3-No-Function-Where"
+RULE_DB_PREFER_OUTER_JOIN = "Rule-DB-5.4-Prefer-Outer-Join"
+RULE_DB_NO_LIKE_EQUAL = "Rule-DB-5.5-No-Like-Equal"
+RULE_DB_COUNT_COLUMN = "Rule-DB-5.6-Count-Column"
+RULE_DB_USE_BIND_VARIABLES = "Rule-DB-5.7-Use-Bind-Variables"
+RULE_DB_EXISTS_DISTINCT = "Rule-DB-5.8-Exists-Distinct"
+RULE_DB_DRIVING_TABLE_ORDER = "Rule-DB-5.9-Driving-Table-Order"
+RULE_DB_FILENAME_LOWERCASE = "Rule-DB-6.1-Filename-Lowercase"
+RULE_DB_PACKAGE_ONE_FILE = "Rule-DB-6.2-Package-One-File"
+RULE_DB_COMBINE_SCHEMA_CHANGES = "Rule-DB-6.4-Combine-Schema-Changes"
+RULE_DB_SEPARATE_DATA_SCRIPTS = "Rule-DB-6.5-Separate-Data-Scripts"
 
 _PR_ADDED_LINES_CACHE = None
 
@@ -5297,11 +5309,213 @@ def check_db_where_order():
                             if first_line in line:
                                 line_no = idx
                                 break
-                        errors.append(warning(
-                            filepath, line_no,
-                            "Rule DB-4.10 [WARN]: Join conditions in WHERE clauses should be ordered before single-table filter conditions.",
-                            RULE_DB_WHERE_ORDER
-                        ))
+    return errors
+
+def check_db_set_where_column():
+    errors = []
+    update_pat = re.compile(r'\bUPDATE\s+[a-zA-Z0-9_]+\s+SET\s+([a-zA-Z0-9_]+)\s*=\s*.*?\bWHERE\b(.*?)(?:;|$)', re.IGNORECASE | re.DOTALL)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for m in update_pat.finditer(content_clean):
+            col_name = m.group(1).lower()
+            where_clause = m.group(2).lower()
+            if col_name not in where_clause:
+                line_no = len(content_clean[:m.start()].splitlines()) + 1
+                errors.append(warning(
+                    filepath, line_no,
+                    f"Rule DB-5.2 [WARN]: Include the updated column '{m.group(1)}' in the WHERE clause to skip redundant writes.",
+                    RULE_DB_SET_WHERE_COLUMN
+                ))
+    return errors
+
+def check_db_no_function_where():
+    errors = []
+    func_where_pat = re.compile(r'\bWHERE\b.*?\b([a-zA-Z0-9_]+)\s*\(\s*[a-zA-Z0-9_.]+\s*\)\s*(?:=|<|>|!=|<>)', re.IGNORECASE | re.DOTALL)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for m in func_where_pat.finditer(content_clean):
+            func_name = m.group(1).upper()
+            if func_name in ('EXISTS', 'COUNT', 'EXTRACT', 'ABS', 'MOD', 'POWER', 'ROUND', 'TRUNC', 'DECODE'):
+                continue
+            line_no = len(content_clean[:m.start()].splitlines()) + 1
+            errors.append(warning(
+                filepath, line_no,
+                f"Rule DB-5.3 [WARN]: Avoid wrapping column in function '{m.group(1)}' inside the WHERE clause to allow index usage.",
+                RULE_DB_NO_FUNCTION_WHERE
+            ))
+    return errors
+
+def check_db_prefer_outer_join():
+    errors = []
+    not_in_pat = re.compile(r'\bNOT\s+IN\s*\(\s*SELECT\b', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if not_in_pat.search(line):
+                errors.append(warning(
+                    filepath, line_no,
+                    "Rule DB-5.4 [WARN]: Prefer outer joins over 'NOT IN' subqueries for better performance.",
+                    RULE_DB_PREFER_OUTER_JOIN
+                ))
+    return errors
+
+def check_db_no_like_equal():
+    errors = []
+    like_pat = re.compile(r'\bLIKE\s+\'([^\'%_]+)\'', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if like_pat.search(line):
+                errors.append(warning(
+                    filepath, line_no,
+                    "Rule DB-5.5 [WARN]: Avoid 'LIKE' in place of '=' for exact-match comparisons where no wildcards are used.",
+                    RULE_DB_NO_LIKE_EQUAL
+                ))
+    return errors
+
+def check_db_count_column():
+    errors = []
+    count_pat = re.compile(r'\bCOUNT\s*\(\s*\*\s*\)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if count_pat.search(line):
+                errors.append(warning(
+                    filepath, line_no,
+                    "Rule DB-5.6 [WARN]: COUNT() should use a specific column or 1, not * (e.g. COUNT(1) or COUNT(id)).",
+                    RULE_DB_COUNT_COLUMN
+                ))
+    return errors
+
+def check_db_use_bind_variables():
+    errors = []
+    literal_pat = re.compile(r'\bWHERE\b.*?\b[a-zA-Z0-9_.]+\s*=\s*(\d+)\b', re.IGNORECASE | re.DOTALL)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for m in literal_pat.finditer(content_clean):
+            if re.search(r'\b(?:PROCEDURE|FUNCTION|PACKAGE BODY)\b', content_clean, re.IGNORECASE):
+                line_no = len(content_clean[:m.start()].splitlines()) + 1
+                errors.append(warning(
+                    filepath, line_no,
+                    f"Rule DB-5.7 [WARN]: Use bind variables or parameters instead of hardcoded literal '{m.group(1)}'.",
+                    RULE_DB_USE_BIND_VARIABLES
+                ))
+    return errors
+
+def check_db_exists_distinct():
+    errors = []
+    distinct_pat = re.compile(r'\bSELECT\s+DISTINCT\b', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if distinct_pat.search(line):
+                if re.search(r'\bFROM\s+[a-zA-Z0-9_]+(?:\s+[a-zA-Z0-9_]+)?\s*,\s*[a-zA-Z0-9_]+|\bJOIN\b', line, re.IGNORECASE):
+                    errors.append(warning(
+                        filepath, line_no,
+                        "Rule DB-5.8 [WARN]: Use EXISTS instead of SELECT DISTINCT to de-duplicate a join when table is only used as filter.",
+                        RULE_DB_EXISTS_DISTINCT
+                    ))
+    return errors
+
+def check_db_driving_table_order():
+    errors = []
+    comma_join_pat = re.compile(r'\bFROM\s+[a-zA-Z0-9_]+\s*,\s*[a-zA-Z0-9_]+\b', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        for line_no, line in enumerate(content_clean.splitlines(), 1):
+            if comma_join_pat.search(line):
+                errors.append(warning(
+                    filepath, line_no,
+                    "Rule DB-5.9 [WARN]: Ensure the driving table (usually smaller table) is listed last in the FROM clause for optimal right-to-left parsing.",
+                    RULE_DB_DRIVING_TABLE_ORDER
+                ))
+    return errors
+
+def check_db_filename_lowercase():
+    errors = []
+    obj_pat = re.compile(r'\bCREATE\s+(?:OR\s+REPLACE\s+)?(?:PROCEDURE|FUNCTION|PACKAGE)\s+([a-zA-Z0-9_]+)', re.IGNORECASE)
+    for filepath in find_sql_files():
+        content = _read_file(filepath)
+        if not content:
+            continue
+        content_clean = _strip_sql_comments(content)
+        m = obj_pat.search(content_clean)
+        if m:
+            obj_name = m.group(1).lower()
+            filename = os.path.basename(filepath)
+            expected_name = f"{obj_name}.sql"
+            if filename != expected_name:
+                errors.append(warning(
+                    filepath, 1,
+                    f"Rule DB-6.1 [WARN]: Filename '{filename}' must match object name, in lower case, with a '.sql' extension (expected: '{expected_name}').",
+                    RULE_DB_FILENAME_LOWERCASE
+                ))
+    return errors
+
+def check_db_package_one_file():
+    errors = []
+    for filepath in find_sql_files():
+        filename = os.path.basename(filepath).lower()
+        if filename.endswith('_spec.sql') or filename.endswith('_body.sql'):
+            errors.append(warning(
+                filepath, 1,
+                f"Rule DB-6.2 [WARN]: Package header and body must be saved together in a single file (found: '{filename}').",
+                RULE_DB_PACKAGE_ONE_FILE
+            ))
+    return errors
+
+def check_db_combine_schema_changes():
+    errors = []
+    for filepath in find_sql_files():
+        filename = os.path.basename(filepath).lower()
+        if filename.startswith(('add_column_', 'add_index_', 'create_table_')):
+            errors.append(warning(
+                filepath, 1,
+                f"Rule DB-6.4 [WARN]: Release schema changes must be combined into dbchanges_MMDDYY.sql (found: '{filename}').",
+                RULE_DB_COMBINE_SCHEMA_CHANGES
+            ))
+    return errors
+
+def check_db_separate_data_scripts():
+    errors = []
+    for filepath in find_sql_files():
+        filename = os.path.basename(filepath).lower()
+        if filename.startswith('dbchanges_'):
+            content = _read_file(filepath)
+            if not content:
+                continue
+            content_clean = _strip_sql_comments(content)
+            inserts = len(re.findall(r'\bINSERT\s+INTO\b', content_clean, re.IGNORECASE))
+            if inserts > 10:
+                errors.append(warning(
+                    filepath, 1,
+                    f"Rule DB-6.5 [WARN]: dbchanges file contains {inserts} INSERT statements. Large data scripts must be kept in a separate file.",
+                    RULE_DB_SEPARATE_DATA_SCRIPTS
+                ))
     return errors
 
 def normalize_path(p):
@@ -5629,6 +5843,18 @@ def main():
     new_errors.extend(check_db_magic_value_comment())
     new_errors.extend(check_db_use_type_declaration())
     new_errors.extend(check_db_where_order())
+    new_errors.extend(check_db_set_where_column())
+    new_errors.extend(check_db_no_function_where())
+    new_errors.extend(check_db_prefer_outer_join())
+    new_errors.extend(check_db_no_like_equal())
+    new_errors.extend(check_db_count_column())
+    new_errors.extend(check_db_use_bind_variables())
+    new_errors.extend(check_db_exists_distinct())
+    new_errors.extend(check_db_driving_table_order())
+    new_errors.extend(check_db_filename_lowercase())
+    new_errors.extend(check_db_package_one_file())
+    new_errors.extend(check_db_combine_schema_changes())
+    new_errors.extend(check_db_separate_data_scripts())
     
     try:
         new_errors.extend(check_compilation())

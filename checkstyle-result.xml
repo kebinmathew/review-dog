@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="8.0">
+  <file name="src/main/resources/db/migration/bad_standards.sql">
+    <error line="1" column="1" severity="error" message="Rule DB-1 [BLOCK]: UPDATE script must include SQL_SAFE_UPDATES guards. Missing: SET SQL_SAFE_UPDATES = 0 (before UPDATE), SET SQL_SAFE_UPDATES = 1 (after UPDATE)." source="Rule-DB-1-SQL-Safe-Updates" />
+    <error line="1" column="1" severity="error" message="Rule DB-2 [BLOCK]: INSERT/UPDATE script must set UPDATE_USER and UPDATE_TIMESTAMP column(s)." source="Rule-DB-2-Update-User-Timestamp" />
+    <error line="2" column="1" severity="warning" message="Rule DB-1.4 [WARN]: Procedure &apos;test_best_practices&apos; name must be prefixed by an action (GET, UPDATE/UPD, DELETE/DEL, INSERT)." source="Rule-DB-1.4-Proc-Prefix" />
+    <error line="14" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;LIKE&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="23" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;DISTINCT&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="26" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;TAB1&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="26" column="1" severity="warning" message="Rule DB-4.2 [WARN]: Identifier &apos;TAB2&apos; must be written in lower case." source="Rule-DB-4.2-Identifiers-Lower" />
+    <error line="8" column="1" severity="warning" message="Rule DB-4.8 [WARN]: Magic / constant values used in WHERE clauses must be documented with an explanatory comment." source="Rule-DB-4.8-Magic-Value-Comment" />
+    <error line="20" column="1" severity="warning" message="Rule DB-4.8 [WARN]: Magic / constant values used in WHERE clauses must be documented with an explanatory comment." source="Rule-DB-4.8-Magic-Value-Comment" />
+    <error line="6" column="1" severity="warning" message="Rule DB-5.2 [WARN]: Include the updated column &apos;status&apos; in the WHERE clause to skip redundant writes." source="Rule-DB-5.2-Set-Where-Column" />
+    <error line="6" column="1" severity="warning" message="Rule DB-5.3 [WARN]: Avoid wrapping column in function &apos;to_num&apos; inside the WHERE clause to allow index usage." source="Rule-DB-5.3-No-Function-Where" />
+    <error line="11" column="1" severity="warning" message="Rule DB-5.4 [WARN]: Prefer outer joins over &apos;NOT IN&apos; subqueries for better performance." source="Rule-DB-5.4-Prefer-Outer-Join" />
+    <error line="14" column="1" severity="warning" message="Rule DB-5.5 [WARN]: Avoid &apos;LIKE&apos; in place of &apos;=&apos; for exact-match comparisons where no wildcards are used." source="Rule-DB-5.5-No-Like-Equal" />
+    <error line="17" column="1" severity="warning" message="Rule DB-5.6 [WARN]: COUNT() should use a specific column or 1, not * (e.g. COUNT(1) or COUNT(id))." source="Rule-DB-5.6-Count-Column" />
+    <error line="6" column="1" severity="warning" message="Rule DB-5.7 [WARN]: Use bind variables or parameters instead of hardcoded literal &apos;20&apos;." source="Rule-DB-5.7-Use-Bind-Variables" />
+    <error line="23" column="1" severity="warning" message="Rule DB-5.8 [WARN]: Use EXISTS instead of SELECT DISTINCT to de-duplicate a join when table is only used as filter." source="Rule-DB-5.8-Exists-Distinct" />
+    <error line="26" column="1" severity="warning" message="Rule DB-5.9 [WARN]: Ensure the driving table (usually smaller table) is listed last in the FROM clause for optimal right-to-left parsing." source="Rule-DB-5.9-Driving-Table-Order" />
+    <error line="1" column="1" severity="warning" message="Rule DB-6.1 [WARN]: Filename &apos;bad_standards.sql&apos; must match object name, in lower case, with a &apos;.sql&apos; extension (expected: &apos;test_best_practices.sql&apos;)." source="Rule-DB-6.1-Filename-Lowercase" />
+  </file>
+  <file name="src/main/resources/db/migration/dbchanges_122409.sql">
+    <error line="1" column="1" severity="error" message="Rule DB-2 [BLOCK]: INSERT/UPDATE script must set UPDATE_USER and UPDATE_TIMESTAMP column(s)." source="Rule-DB-2-Update-User-Timestamp" />
+    <error line="1" column="1" severity="warning" message="Rule DB-6.5 [WARN]: dbchanges file contains 11 INSERT statements. Large data scripts must be kept in a separate file." source="Rule-DB-6.5-Separate-Data-Scripts" />
+  </file>
+  <file name="src/main/resources/db/migration/pkg_emp_utils_spec.sql">
+    <error line="3" column="1" severity="error" message="Rule DB-2.1 [BLOCK]: Object header must start with CREATE OR REPLACE (every function, procedure, or package)." source="Rule-DB-2.1-Create-Or-Replace" />
+    <error line="3" column="1" severity="warning" message="Rule DB-2.2 [WARN]: Purpose comment required right below the procedure/function/package/trigger header." source="Rule-DB-2.2-Purpose-Comment" />
+    <error line="1" column="1" severity="warning" message="Rule DB-6.2 [WARN]: Package header and body must be saved together in a single file (found: &apos;pkg_emp_utils_spec.sql&apos;)." source="Rule-DB-6.2-Package-One-File" />
+  </file>
+  <file name="src/main/resources/db/migration/GetEmpDetails.sql">
+    <error line="3" column="1" severity="warning" message="Rule DB-2.2 [WARN]: Purpose comment required right below the procedure/function/package/trigger header." source="Rule-DB-2.2-Purpose-Comment" />
+    <error line="1" column="1" severity="warning" message="Rule DB-6.1 [WARN]: Filename &apos;GetEmpDetails.sql&apos; must match object name, in lower case, with a &apos;.sql&apos; extension (expected: &apos;get_emp_details.sql&apos;)." source="Rule-DB-6.1-Filename-Lowercase" />
+  </file>
+  <file name="src/main/resources/db/migration/add_column_emp_status.sql">
+    <error line="1" column="1" severity="warning" message="Rule DB-6.4 [WARN]: Release schema changes must be combined into dbchanges_MMDDYY.sql (found: &apos;add_column_emp_status.sql&apos;)." source="Rule-DB-6.4-Combine-Schema-Changes" />
+  </file>
+</checkstyle>
